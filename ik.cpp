@@ -167,8 +167,11 @@ void driveServos(){
   
     for( int legNum=0; legNum<6; legNum++ ){
         leg[legNum].servoPos.coxa  = round((abs( leg[legNum].jointAngles.coxa  - 210) - 60 )  / 0.293);
+        //cout << "Coxa Pos: " << leg[legNum].servoPos.coxa << endl;
         leg[legNum].servoPos.femur = round((abs( leg[legNum].jointAngles.femur - 210) - 60 )  / 0.293);
+        //cout << "Femur Pos: " << leg[legNum].servoPos.femur << endl;
         leg[legNum].servoPos.tibia = round((abs( leg[legNum].jointAngles.tibia - 210) - 60 )  / 0.293);
+        //cout << "Tibia Pos: " << leg[legNum].servoPos.tibia << endl;
     }
       
     syncWriteServos();  

@@ -19,8 +19,8 @@ using namespace std;
 #define P_GOAL_SPEED_H		33
 
 // Defulat setting
-#define DEFAULT_BAUDNUM		1 // 1Mbps
-#define NUM_SERVOS			18 // Number of actuator
+#define DEFAULT_BAUDNUM		1  // 1Mbps
+#define NUM_SERVOS			18 // Number of actuators
  
 
 void PrintCommStatus(int CommStatus);
@@ -28,11 +28,6 @@ void PrintErrorCode(void);
 
 
 int id[NUM_SERVOS];
-int baudnum = 1;
-int deviceIndex = 0;
-
-
-
 int CommStatus;
 
 
@@ -111,22 +106,18 @@ void syncWriteServos()
 	dxl_set_txpacket_parameter(2+3*17+2, dxl_get_highbyte(leg[LEFT_FRONT].servoPos.tibia));
 	
 	dxl_set_txpacket_length((2+1)*NUM_SERVOS+4);
-	
-	//printf( "\n" );
-	
 	dxl_txrx_packet();
 	
 	CommStatus = dxl_get_result();
-	/*if( CommStatus == COMM_RXSUCCESS )
+	if( CommStatus == COMM_RXSUCCESS )
 	{
 		PrintErrorCode();
 	}
 	else
 	{
 		PrintCommStatus(CommStatus);
-	}*/
+	}
 			
-
 }
 
 

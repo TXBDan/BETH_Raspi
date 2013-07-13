@@ -21,7 +21,8 @@ unsigned long currentTime;
 unsigned long currentMicros;
 unsigned long previousTime;
 int tick;
-int caseStep[6] = {1,3,1,3,1,3}; //for tripod gait
+//int caseStep[6] = {1,3,1,3,1,3}; //for tripod gait
+int caseStep[6] = {1,2,1,2,1,2}; //for tripod gait
 
 char xbeeDevice[] = "/dev/ttyAMA0";
 
@@ -39,7 +40,7 @@ int main()
 	digitalWrite(pwrLEDpin, HIGH);
 	digitalWrite(faultLEDpin, LOW);
 	
-	// Setup UART for Xbee //
+	//// Setup UART for Xbee ////
 	if( command.begin(xbeeDevice, B38400) )
 		cout << "Initializing Xbee UART... OK" << endl;
 	else{
@@ -47,25 +48,23 @@ int main()
 		digitalWrite(faultLEDpin, HIGH);
 	}
 	
-	
-	// Initialize USB2AX // 
-	if( dxl_initialize(0, 1) == 0 ){ // (/dev/ttyACMX, XMBPs)
+	//// Initialize USB2AX //// 
+	if( dxl_initialize(0, 1) == 0 ){ // (/dev/ttyACM"0", "1"MBPs)
 		cout << "Initializing USB2AX... FAIL" << endl;
 		digitalWrite(faultLEDpin, HIGH);
 	}
 	else
 		cout << "Initializing USB2AX... OK" << endl; 
 	
-	
-	//// Servo voltage check (LiPO safety) ////
+	//// Check Servo Voltage (LiPO safety) ////
     delay (500);
-    float voltage = (dxl_read_word (1, 42)) / 10.0;
+    float voltage = (dxl_read_byte (1, 42)) / 10.0;
     if (voltage < 10.0){
-		cout << "Checking System Voltage... FAIL " << voltage << "V" << endl;
+		cout << "Checking System Voltage... " << voltage << "V FAIL" << endl;
 		digitalWrite(faultLEDpin, HIGH);
 	}
     else
-		cout << "Checking System Voltage... OK " << voltage << "V" << endl;
+		cout << "Checking System Voltage... " << voltage << "V OK" <<endl;
 		
 	
 	cout << "B.E.T.H. IS ALIVE!" << endl;
@@ -117,9 +116,10 @@ int main()
 	while(1){
 		
 		currentTime = millis();
-		//currentMicros = micros();
 		if(currentTime - previousTime >= SERVO_UPDATE_PERIOD){
 			previousTime = currentTime;
+			
+			//currentMicros = micros();
 	
 			//cout << "Main Loop" << endl;
 	
@@ -129,13 +129,14 @@ int main()
 			
 			runIK();
 			
-			tripodGait();  
+			//tripodGait();  
+			tripodGaitSine();
 			//rippleGait();
 			//cout << "Crunch time (us): " << (micros()-currentMicros) << endl;
 			
 
 		}
-		else usleep(5000);
+		else usleep(10000); //10ms sleep
 	}
 	
 	return 0;
@@ -149,8 +150,8 @@ void tripodGait(){
   
     float sinRotZ, cosRotZ;
     int totalX, totalY;
-    float strideRotOffsetX[6], strideRotOffsetY[6];
-    int height = -35;
+    float rotSpeedOffsetX[6], rotSpeedOffsetY[6];
+    int height;
     int duration;
     int numTicks;
     int speedX, speedY, speedR;
@@ -168,12 +169,14 @@ void tripodGait(){
         cosRotZ = cos(radians(speedR));
                  
         for( int legNum=0; legNum<6; legNum++){
+			
+			//cout << "Leg: " << legNum+1 << endl;
           
             totalX = leg[legNum].initialFootPos.x + leg[legNum].legBasePos.x; 
             totalY = leg[legNum].initialFootPos.y + leg[legNum].legBasePos.y;
             
-            strideRotOffsetX[legNum] = totalY*sinRotZ + totalX*cosRotZ - totalX;  
-            strideRotOffsetY[legNum] = totalY*cosRotZ - totalX*sinRotZ - totalY; 
+            rotSpeedOffsetX[legNum] = totalY*sinRotZ + totalX*cosRotZ - totalX;  
+            rotSpeedOffsetY[legNum] = totalY*cosRotZ - totalX*sinRotZ - totalY; 
             
             if(abs(speedR*5) > abs(speedX) && abs(speedR*5) > abs(speedY))  
 				height = -abs(speedR);  
@@ -184,31 +187,35 @@ void tripodGait(){
 					height = -abs(speedY/5);  
             } 
             
+            //cout << "Height is set to: " << height << endl;
              
             switch (caseStep[legNum]){
             
                 case 1: //forward raise
                                       
-                    leg[legNum].footPos.x = ((speedX + strideRotOffsetX[legNum])*tick*SERVO_UPDATE_PERIOD)/1000.0 - (speedX + strideRotOffsetX[legNum])/4.0; 
-                    leg[legNum].footPos.y = ((speedY + strideRotOffsetY[legNum])*tick*SERVO_UPDATE_PERIOD)/1000.0 - (speedY + strideRotOffsetY[legNum])/4.0;
+                    leg[legNum].footPos.x = ((speedX + rotSpeedOffsetX[legNum])*tick*SERVO_UPDATE_PERIOD)/duration - (speedX + rotSpeedOffsetX[legNum])/4.0; 
+                    //cout << "footPos X: " << leg[legNum].footPos.x << endl;
+                    leg[legNum].footPos.y = ((speedY + rotSpeedOffsetY[legNum])*tick*SERVO_UPDATE_PERIOD)/duration - (speedY + rotSpeedOffsetY[legNum])/4.0;
+                    //cout << "footPos Y: " << leg[legNum].footPos.y << endl;
                     leg[legNum].footPos.z = (height*tick)/numTicks;
+                    //cout << "footPos Z: " << leg[legNum].footPos.z << endl;
                         
                     if( tick >= numTicks-1 ) caseStep[legNum] = 2;
                     break;
                     
                 case 2: // forward lower
                 
-                    leg[legNum].footPos.x = ((speedX + strideRotOffsetX[legNum])*tick*SERVO_UPDATE_PERIOD)/1000.0;
-                    leg[legNum].footPos.y = ((speedY + strideRotOffsetY[legNum])*tick*SERVO_UPDATE_PERIOD)/1000.0;
-                    leg[legNum].footPos.z = height - (height*tick)/numTicks ;
+                    leg[legNum].footPos.x = ((speedX + rotSpeedOffsetX[legNum])*tick*SERVO_UPDATE_PERIOD)/duration;
+                    leg[legNum].footPos.y = ((speedY + rotSpeedOffsetY[legNum])*tick*SERVO_UPDATE_PERIOD)/duration;
+                    leg[legNum].footPos.z = height - (height*tick)/numTicks;
                      
                     if( tick >= numTicks-1 ) caseStep[legNum] = 3;
                     break;
                   
                 case 3: // down pull back
                 
-                    leg[legNum].footPos.x = -((speedX + strideRotOffsetX[legNum])*tick*SERVO_UPDATE_PERIOD)/1000.0 + (speedX + strideRotOffsetX[legNum])/4.0;
-                    leg[legNum].footPos.y = -((speedY + strideRotOffsetY[legNum])*tick*SERVO_UPDATE_PERIOD)/1000.0 + (speedY + strideRotOffsetY[legNum])/4.0;
+                    leg[legNum].footPos.x = -((speedX + rotSpeedOffsetX[legNum])*tick*SERVO_UPDATE_PERIOD)/duration + (speedX + rotSpeedOffsetX[legNum])/4.0;
+                    leg[legNum].footPos.y = -((speedY + rotSpeedOffsetY[legNum])*tick*SERVO_UPDATE_PERIOD)/duration + (speedY + rotSpeedOffsetY[legNum])/4.0;
                     leg[legNum].footPos.z = 0;
                         
                     if( tick >= numTicks-1 ) caseStep[legNum] = 4;
@@ -216,12 +223,97 @@ void tripodGait(){
                     
                 case 4: // down pull back
                     
-                    leg[legNum].footPos.x = -((speedX + strideRotOffsetX[legNum])*tick*SERVO_UPDATE_PERIOD)/1000.0;
-                    leg[legNum].footPos.y = -((speedY + strideRotOffsetY[legNum])*tick*SERVO_UPDATE_PERIOD)/1000.0;
+                    leg[legNum].footPos.x = -((speedX + rotSpeedOffsetX[legNum])*tick*SERVO_UPDATE_PERIOD)/duration;
+                    leg[legNum].footPos.y = -((speedY + rotSpeedOffsetY[legNum])*tick*SERVO_UPDATE_PERIOD)/duration;
                     leg[legNum].footPos.z = 0;
     
                     if( tick >= numTicks-1 ) caseStep[legNum] = 1;
                     break;
+       
+          }// end of case statement
+                             
+        }// end of loop over legs
+        if (tick < numTicks-1) tick++;
+        else tick = 0;
+      
+    }//end if joystick active
+
+}
+
+/*************************************************
+  tripodGaitSine()
+  
+**************************************************/
+void tripodGaitSine(){
+  
+    float sinRotZ, cosRotZ;
+    int totalX, totalY;
+    float rotSpeedOffsetX[6], rotSpeedOffsetY[6];
+    float amplitudeX, amplitudeY, amplitudeZ;
+    int duration;
+    int numTicks;
+    int speedX, speedY, speedR;
+          
+    if( (abs(commanderInput.Xspeed) > 5) || (abs(commanderInput.Yspeed) > 5) || (abs(commanderInput.Rspeed) > 5 ) ){
+                             
+        duration = 500;                               //duration of one step cycle (ms)      
+        numTicks = round(duration / SERVO_UPDATE_PERIOD / 2.0); //total ticks divided into the two cases   
+              
+        speedX = 180*commanderInput.Xspeed/127;        //180mm/s top speed for 180mmm stride in one sec
+        speedY = 180*commanderInput.Yspeed/127;        //180mm/s top speed
+        speedR = 40*commanderInput.Rspeed/127;         //40deg/s top rotation speed
+                    
+        sinRotZ = sin(radians(speedR));
+        cosRotZ = cos(radians(speedR));
+                 
+        for( int legNum=0; legNum<6; legNum++){
+			
+			//cout << "Leg: " << legNum+1 << endl;
+          
+            totalX = leg[legNum].initialFootPos.x + leg[legNum].legBasePos.x; 
+            totalY = leg[legNum].initialFootPos.y + leg[legNum].legBasePos.y;
+            
+            rotSpeedOffsetX[legNum] = totalY*sinRotZ + totalX*cosRotZ - totalX;  
+            rotSpeedOffsetY[legNum] = totalY*cosRotZ - totalX*sinRotZ - totalY; 
+            
+            if( abs(speedX + rotSpeedOffsetX[legNum]) > abs(speedY + rotSpeedOffsetY[legNum]) )  
+				amplitudeZ = ((speedX + rotSpeedOffsetX[legNum])*duration/3000.0); 
+            else
+				amplitudeZ = ((speedY + rotSpeedOffsetY[legNum])*duration/3000.0);
+				          
+            amplitudeX = ((speedX + rotSpeedOffsetX[legNum])*duration/2000.0);
+            amplitudeY = ((speedY + rotSpeedOffsetY[legNum])*duration/2000.0);
+            
+                      
+            switch (caseStep[legNum]){
+            
+                case 1: //forward raise and lower
+                
+					//cout << "Case 1, tick: " << tick << endl;
+                                      
+                    leg[legNum].footPos.x = -amplitudeX*cos(M_PI*tick/numTicks); 
+                    //cout << "footPos X: " << leg[legNum].footPos.x << endl;
+                    leg[legNum].footPos.y = -amplitudeY*cos(M_PI*tick/numTicks);
+                    //cout << "footPos Y: " << leg[legNum].footPos.y << endl;
+                    leg[legNum].footPos.z = -abs(amplitudeZ)*sin(M_PI*tick/numTicks);
+                    //cout << "footPos Z: " << leg[legNum].footPos.z << endl;
+                        
+                    if( tick >= numTicks-1 ) caseStep[legNum] = 2;
+                    break;
+                    
+                case 2: // pull back
+                
+					//cout << "Case 2, tick: " << tick << endl;
+                
+                    leg[legNum].footPos.x = amplitudeX*cos(M_PI*tick/numTicks);
+                    //cout << "footPos X: " << leg[legNum].footPos.x << endl;
+                    leg[legNum].footPos.y = amplitudeY*cos(M_PI*tick/numTicks);
+                    //cout << "footPos Y: " << leg[legNum].footPos.y << endl;
+                    leg[legNum].footPos.z = 0;
+                    //cout << "footPos Z: " << leg[legNum].footPos.z << endl;
+                     
+                    if( tick >= numTicks-1 ) caseStep[legNum] = 1;
+                    break;             
        
           }// end of case statement
                              
@@ -243,12 +335,12 @@ void readCommandInputs(){
   //cout << "Read Commander Inputs" << endl;
   
   //commanderInput.Xspeed = 80;
-  //commanderInput.Yspeed = 100;
+  //commanderInput.Yspeed = 127;
   //commanderInput.Rspeed = 80;
   
   
   if(command.ReadMsgs() > 0){
-	  cout << "We have message!!!" << endl;
+	  //cout << "We have message!!!" << endl;
       //digitalWrite( ledPin, HIGH-digitalRead(ledPin) );
       
       //read in Command controller inputs
@@ -268,9 +360,9 @@ void readCommandInputs(){
       else commanderInput.Rspeed = 0;
           
       if( command.buttons&BUT_RT ){
-          commanderInput.bodyRotX = -(float)command.leftH / 10.0;
-          commanderInput.bodyRotY = (float)command.leftV / 10.0;
-          commanderInput.bodyRotZ = -(float)command.rightH / 7.0;      
+          commanderInput.bodyRotX = -command.leftH / 10.0;
+          commanderInput.bodyRotY =  command.leftV / 10.0;
+          commanderInput.bodyRotZ = -command.rightH / 7.0;      
           commanderInput.Rspeed = 0;
           commanderInput.Xspeed = 0;
           commanderInput.Yspeed = 0;  

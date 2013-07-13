@@ -134,6 +134,7 @@ void runIK();
 void driveServos();
 void legAngleCorrections();
 void tripodGait();
+void tripodGaitSine();
 void rippleGait();
 float radians(float deg);
 float degrees(float rad);

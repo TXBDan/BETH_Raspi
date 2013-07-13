@@ -247,20 +247,20 @@ int Commander::ReadMsgs()
     {
         pthread_mutex_lock(&lock);
         // We have a valid packet so lets use it.  But lets do that using our mutex to keep things consistent...
-        if((status&0x01) > 0)                     // SouthPaw
-        {
+        //if((status&0x01) > 0)                     // SouthPaw
+        //{
             rightV = (signed char)( (int)vals[0]-128 );
             rightH = (signed char)( (int)vals[1]-128 );
             leftV = (signed char)( (int)vals[2]-128 );
             leftH = (signed char)( (int)vals[3]-128 );
-        }
+        /*}
         else
         {
             leftV = (signed char)( (int)vals[0]-128 );
             leftH = (signed char)( (int)vals[1]-128 );
             rightV = (signed char)( (int)vals[2]-128 );
             rightH = (signed char)( (int)vals[3]-128 );
-        }
+        }*/
         pan = (vals[0]<<8) + vals[1];
         tilt = (vals[2]<<8) + vals[3];
         buttons = vals[4];
