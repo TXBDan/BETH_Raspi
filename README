@@ -1,6 +1,6 @@
 README
 
-This code is intended to be ran on a Raspberry  used with the Trossen Robotics MkII PhantomX Hexapod chassis using Robotis Dynamixel AX-12A servos. This is my code that I'm writing just for fun. I barely know what I'm doing. It's probably broken in lots of ways so use at your own risk. Beware!
+This is my code that I'm writing just for fun. I barely know what I'm doing. It's probably broken in lots of ways so use at your own risk. Beware!
 
 Processor Requirements:
 Raspberry Pi
