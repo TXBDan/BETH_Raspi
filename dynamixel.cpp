@@ -17,6 +17,8 @@ using namespace std;
 #define P_GOAL_POSITION_H	31
 #define P_GOAL_SPEED_L		32
 #define P_GOAL_SPEED_H		33
+#define P_PRESENT_LOAD_L	40
+#define P_PRESENT_LOAD_H	41
 
 // Defulat setting
 #define DEFAULT_BAUDNUM		1  // 1Mbps
@@ -30,6 +32,78 @@ void PrintErrorCode(void);
 int id[NUM_SERVOS];
 int CommStatus;
 
+
+
+
+void syncReadServos()
+{
+	// Make syncwrite packet
+	dxl_set_txpacket_id(BROADCAST_ID);
+	dxl_set_txpacket_length((2+1)*NUM_SERVOS+4);
+	dxl_set_txpacket_instruction(INST_SYNC_READ);
+	dxl_set_txpacket_parameter(0, P_PRESENT_LOAD_L);
+	dxl_set_txpacket_parameter(1, 2);
+
+	// RF
+	dxl_set_txpacket_parameter(2, RF_COXA_ID);
+	dxl_set_txpacket_parameter(3, RF_FEMUR_ID);
+	dxl_set_txpacket_parameter(4, RF_TIBIA_ID);
+	
+	// RM
+	dxl_set_txpacket_parameter(5, RM_COXA_ID);
+	dxl_set_txpacket_parameter(6, RM_FEMUR_ID);
+	dxl_set_txpacket_parameter(7, RM_TIBIA_ID);
+	
+	// RR
+	dxl_set_txpacket_parameter(8, RR_COXA_ID);
+	dxl_set_txpacket_parameter(9, RR_FEMUR_ID);
+	dxl_set_txpacket_parameter(10, RR_TIBIA_ID);
+	
+	// LR
+	dxl_set_txpacket_parameter(11, LR_COXA_ID);
+	dxl_set_txpacket_parameter(12, LR_FEMUR_ID);
+	dxl_set_txpacket_parameter(13, LR_TIBIA_ID);
+	
+	// LM
+	dxl_set_txpacket_parameter(14, LM_COXA_ID);
+	dxl_set_txpacket_parameter(15, LM_FEMUR_ID);
+	dxl_set_txpacket_parameter(16, LM_TIBIA_ID);
+	
+	// LF
+	dxl_set_txpacket_parameter(17, LF_COXA_ID);
+	dxl_set_txpacket_parameter(18, LF_FEMUR_ID);
+	dxl_set_txpacket_parameter(19, LF_TIBIA_ID);
+	
+	
+	dxl_txrx_packet();
+	
+	CommStatus = dxl_get_result();
+
+	if( CommStatus == COMM_RXSUCCESS )
+	{
+		PrintErrorCode();
+	}
+	else
+	{
+		PrintCommStatus(CommStatus);
+	}
+			
+}
+
+
+int readLoad( int id){
+	
+	int load;
+	load = dxl_read_word(id, 40) ;
+	
+	load = load&0b0000000111111111;
+	
+	if(load&0b0000000100000000 == 0b0000000100000000)
+		load = -load;
+	
+	return load;
+	
+}
 
 void syncWriteServos()
 {

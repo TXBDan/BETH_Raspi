@@ -43,27 +43,29 @@ void bodyFK(){
 	//cout << "Body FK" << endl;
     
     float sinRotX, cosRotX, sinRotY, cosRotY, sinRotZ, cosRotZ;
-    int totalX, totalY, totalZ;
     float bodyRotOffsetX[6], bodyRotOffsetY[6], bodyRotOffsetZ[6];
+    intCoordsStruct globalInitFootPos;
   
-    sinRotX = sin(radians(-commanderInput.bodyRotX));
-    cosRotX = cos(radians(-commanderInput.bodyRotX));
+    sinRotX = sin(radians( commanderInput.bodyRotX));
+    cosRotX = cos(radians( commanderInput.bodyRotX));
     sinRotY = sin(radians(-commanderInput.bodyRotY));
     cosRotY = cos(radians(-commanderInput.bodyRotY));
-    sinRotZ = sin(radians(-commanderInput.bodyRotZ));
-    cosRotZ = cos(radians(-commanderInput.bodyRotZ));
+    sinRotZ = sin(radians( commanderInput.bodyRotZ));
+    cosRotZ = cos(radians( commanderInput.bodyRotZ));
   
     for( int legNum=0; legNum<6; legNum++){ 
         
         //cout << "bodyFK() Leg: " << legNum+1 << endl;
     
-        totalX = leg[legNum].initialFootPos.x + leg[legNum].legBasePos.x;       
-        totalY = leg[legNum].initialFootPos.y + leg[legNum].legBasePos.y;
-        totalZ = leg[legNum].initialFootPos.z + leg[legNum].legBasePos.z;
+		// Distance from center of body to foot position
+        globalInitFootPos.x = leg[legNum].initialFootPos.x + leg[legNum].legBasePos.x;       
+        globalInitFootPos.y = leg[legNum].initialFootPos.y + leg[legNum].legBasePos.y;
+        globalInitFootPos.z = leg[legNum].initialFootPos.z + leg[legNum].legBasePos.z;
 
-        bodyRotOffsetX[legNum] = ( totalY*cosRotY*sinRotZ + totalY*cosRotZ*sinRotX*sinRotY + totalX*cosRotZ*cosRotY - totalX*sinRotZ*sinRotX*sinRotY - totalZ*cosRotX*sinRotY) - totalX;     
-        bodyRotOffsetY[legNum] =   totalY*cosRotX*cosRotZ - totalX*cosRotX*sinRotZ         + totalZ*sinRotX         - totalY;      
-        bodyRotOffsetZ[legNum] = ( totalY*sinRotZ*sinRotY - totalY*cosRotZ*cosRotY*sinRotX + totalX*cosRotZ*sinRotY + totalX*cosRotY*sinRotZ*sinRotX + totalZ*cosRotX*cosRotY) - totalZ;       
+		// Foot position offsets necessary to acheive given body rotation
+        bodyRotOffsetX[legNum] = ( globalInitFootPos.y*cosRotY*sinRotZ + globalInitFootPos.y*cosRotZ*sinRotX*sinRotY + globalInitFootPos.x*cosRotZ*cosRotY - globalInitFootPos.x*sinRotZ*sinRotX*sinRotY - globalInitFootPos.z*cosRotX*sinRotY) - globalInitFootPos.x;     
+        bodyRotOffsetY[legNum] =   globalInitFootPos.y*cosRotX*cosRotZ - globalInitFootPos.x*cosRotX*sinRotZ         + globalInitFootPos.z*sinRotX         - globalInitFootPos.y;      
+        bodyRotOffsetZ[legNum] = ( globalInitFootPos.y*sinRotZ*sinRotY - globalInitFootPos.y*cosRotZ*cosRotY*sinRotX + globalInitFootPos.x*cosRotZ*sinRotY + globalInitFootPos.x*cosRotY*sinRotZ*sinRotX + globalInitFootPos.z*cosRotX*cosRotY) - globalInitFootPos.z;       
         
         // Calculated foot positions to acheive xlation/rotation input. Not coxa mounting angle corrected
         bodyRotOffsetX[legNum] = leg[legNum].initialFootPos.x + bodyRotOffsetX[legNum] - commanderInput.bodyTransX + leg[legNum].footPos.x;                                              
@@ -106,8 +108,7 @@ void bodyFK(){
 
 /**************************************************************************************************************
     legIK()
-    Translates foot x,y,z positions (body space) to leg space and adds goal foot positon input (leg space).
-    Calculates the coxa, femur, and tibia angles for these foot positions (leg space).
+    Calculates the coxa, femur, and tibia angles for foot positions (leg space).
 ***************************************************************************************************************/
 void legIK(){
 	
@@ -175,4 +176,35 @@ void driveServos(){
     }
       
     syncWriteServos();  
+}
+
+
+intCoordsStruct bodyCGOffset(){
+	
+	intCoordsStruct globalPosition[6];
+	intCoordsStruct offset;
+	
+	offset.x = 0;
+	offset.y = 0;
+	offset.z = 0;
+	
+	for(int legNum; legNum<6; legNum++){
+	
+		globalPosition[legNum].x = leg[legNum].footPosCalc.x + leg[legNum].legBasePos.x;
+		globalPosition[legNum].y = leg[legNum].footPosCalc.y + leg[legNum].legBasePos.y;
+		globalPosition[legNum].z = leg[legNum].footPosCalc.z + leg[legNum].legBasePos.z;
+		
+		offset.x = offset.x + globalPosition[legNum].x;
+		offset.y = offset.y + globalPosition[legNum].y;
+		offset.z = offset.z + globalPosition[legNum].z;
+	
+	}
+	
+	offset.x = offset.x/6;
+	offset.y = offset.y/6;
+	offset.z = offset.z/6;
+	
+	return offset;
+	
+	
 }
