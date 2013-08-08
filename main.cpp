@@ -72,43 +72,43 @@ int main()
 	cout << "B.E.T.H. IS ALIVE!" << endl;
 	
 	/* INITIAL FOOT POSITIONS */
-    leg[RIGHT_FRONT].initialFootPos.x = round( sin(radians(COXA_ANGLE))*(LENGTH_COXA+LENGTH_FEMUR) );
-    leg[RIGHT_FRONT].initialFootPos.y = round( cos(radians(COXA_ANGLE))*(LENGTH_COXA+LENGTH_FEMUR) );
+    leg[RIGHT_FRONT].initialFootPos.x = round( sin(radians(COXA_ANGLE))*(LENGTH_COXA+LENGTH_FEMUR+initLegStretch) );
+    leg[RIGHT_FRONT].initialFootPos.y = round( cos(radians(COXA_ANGLE))*(LENGTH_COXA+LENGTH_FEMUR+initLegStretch) );
     leg[RIGHT_FRONT].initialFootPos.z = LENGTH_TIBIA + rideHeightOffset;
     leg[RIGHT_FRONT].legBasePos.x = X_COXA;
     leg[RIGHT_FRONT].legBasePos.y = Y_COXA_FB;
     leg[RIGHT_FRONT].legBasePos.z = 0;
     
     leg[RIGHT_MIDDLE].initialFootPos.x = 0;
-    leg[RIGHT_MIDDLE].initialFootPos.y = (LENGTH_COXA+LENGTH_FEMUR);
+    leg[RIGHT_MIDDLE].initialFootPos.y = (LENGTH_COXA+LENGTH_FEMUR+initLegStretch);
     leg[RIGHT_MIDDLE].initialFootPos.z = LENGTH_TIBIA + rideHeightOffset;
     leg[RIGHT_MIDDLE].legBasePos.x = 0;
     leg[RIGHT_MIDDLE].legBasePos.y = Y_COXA_M;
     leg[RIGHT_MIDDLE].legBasePos.z = 0;
     
-    leg[RIGHT_REAR].initialFootPos.x = round( sin(radians(-COXA_ANGLE))*(LENGTH_COXA+LENGTH_FEMUR) );
-    leg[RIGHT_REAR].initialFootPos.y = round( cos(radians(COXA_ANGLE))*(LENGTH_COXA+LENGTH_FEMUR) );
+    leg[RIGHT_REAR].initialFootPos.x = round( sin(radians(-COXA_ANGLE))*(LENGTH_COXA+LENGTH_FEMUR+initLegStretch) );
+    leg[RIGHT_REAR].initialFootPos.y = round( cos(radians(COXA_ANGLE))*(LENGTH_COXA+LENGTH_FEMUR+initLegStretch) );
     leg[RIGHT_REAR].initialFootPos.z = LENGTH_TIBIA + rideHeightOffset;
     leg[RIGHT_REAR].legBasePos.x = -X_COXA;
     leg[RIGHT_REAR].legBasePos.y = Y_COXA_FB;
     leg[RIGHT_REAR].legBasePos.z = 0;
     
-    leg[LEFT_REAR].initialFootPos.x = round( sin(radians(-COXA_ANGLE))*(LENGTH_COXA+LENGTH_FEMUR) );
-    leg[LEFT_REAR].initialFootPos.y = -round( cos(radians(COXA_ANGLE))*(LENGTH_COXA+LENGTH_FEMUR) );
+    leg[LEFT_REAR].initialFootPos.x = round( sin(radians(-COXA_ANGLE))*(LENGTH_COXA+LENGTH_FEMUR+initLegStretch) );
+    leg[LEFT_REAR].initialFootPos.y = -round( cos(radians(COXA_ANGLE))*(LENGTH_COXA+LENGTH_FEMUR+initLegStretch) );
     leg[LEFT_REAR].initialFootPos.z = LENGTH_TIBIA + rideHeightOffset;
     leg[LEFT_REAR].legBasePos.x = -X_COXA;
     leg[LEFT_REAR].legBasePos.y = -Y_COXA_FB;
     leg[LEFT_REAR].legBasePos.z = 0;
     
     leg[LEFT_MIDDLE].initialFootPos.x = 0;
-    leg[LEFT_MIDDLE].initialFootPos.y = -(LENGTH_COXA+LENGTH_FEMUR);
+    leg[LEFT_MIDDLE].initialFootPos.y = -(LENGTH_COXA+LENGTH_FEMUR+initLegStretch);
     leg[LEFT_MIDDLE].initialFootPos.z = LENGTH_TIBIA + rideHeightOffset;
     leg[LEFT_MIDDLE].legBasePos.x = 0;
     leg[LEFT_MIDDLE].legBasePos.y = -Y_COXA_M;
     leg[LEFT_MIDDLE].legBasePos.z = 0;
     
-    leg[LEFT_FRONT].initialFootPos.x = round( sin(radians(COXA_ANGLE))*(LENGTH_COXA+LENGTH_FEMUR) );
-    leg[LEFT_FRONT].initialFootPos.y = -round( cos(radians(COXA_ANGLE))*(LENGTH_COXA+LENGTH_FEMUR) );
+    leg[LEFT_FRONT].initialFootPos.x = round( sin(radians(COXA_ANGLE))*(LENGTH_COXA+LENGTH_FEMUR+initLegStretch) );
+    leg[LEFT_FRONT].initialFootPos.y = -round( cos(radians(COXA_ANGLE))*(LENGTH_COXA+LENGTH_FEMUR+initLegStretch) );
     leg[LEFT_FRONT].initialFootPos.z = LENGTH_TIBIA + rideHeightOffset;
     leg[LEFT_FRONT].legBasePos.x = X_COXA;
     leg[LEFT_FRONT].legBasePos.y = -Y_COXA_FB;
@@ -130,6 +130,9 @@ int main()
 			}
 			else if( gaitSelect == 1){
 				waveGait(); 
+			}
+			else if( gaitSelect == 2){
+				rippleGait();
 			}
 			
 			runIK();
@@ -173,70 +176,84 @@ int main()
 void tripodGait(){
   
     float sinRotZ, cosRotZ;
-    int totalX, totalY;
+    intCoordsStruct gblInitFootPos;
     float rotSpeedOffsetX[6], rotSpeedOffsetY[6];
-    float amplitudeX, amplitudeY, amplitudeZ;
+    floatCoordsStruct amplitude;
     int duration;
     int numTicks;
-    int speedX, speedY, speedR;
+    int speedX, speedY;
+    float speedR;
+
           
     if( (abs(commanderInput.Xspeed) > 5) || (abs(commanderInput.Yspeed) > 5) || (abs(commanderInput.Rspeed) > 5 ) ){
                              
-        duration = 500;                               //duration of one step cycle (ms)      
-        numTicks = round(duration / SERVO_UPDATE_PERIOD / 2.0); //total ticks divided into the two cases   
+        duration = 250;                               //duration of pull back step cycle (ms)
+        numTicks = round(duration / SERVO_UPDATE_PERIOD ); //number of ticks in pull back step cycle
               
-        speedX = 180*commanderInput.Xspeed/127;        //180mm/s top speed for 180mmm stride in one sec
-        speedY = 180*commanderInput.Yspeed/127;        //180mm/s top speed
-        speedR = 40*commanderInput.Rspeed/127;         //40deg/s top rotation speed
-                    
-        sinRotZ = sin(radians(speedR));
-        cosRotZ = cos(radians(speedR));
-                 
+        speedX = 300*commanderInput.Xspeed/127;        //300mm/s top speed for 180mmm stride in one sec
+        speedY = 300*commanderInput.Yspeed/127;        //
+        speedR = 30*commanderInput.Rspeed/127;         //30deg/s top rotation speed
+ 
+        
+        amplitude.x = (speedX*duration/1000.0)/2.0; //amplitude is half of stride length
+        amplitude.y = (speedY*duration/1000.0)/2.0;
+        
+        if( abs(commanderInput.Rspeed) > abs(commanderInput.Xspeed) && abs(commanderInput.Rspeed) > abs(commanderInput.Yspeed))
+            amplitude.z = -abs(50*commanderInput.Rspeed/127);
+        else if( abs(commanderInput.Xspeed) > abs(commanderInput.Yspeed) )
+            amplitude.z = -abs(50*commanderInput.Xspeed/127);
+        else
+            amplitude.z = -abs(50*commanderInput.Yspeed/127);
+        
+        //cout << "X Speed: " << (amplitudeX*2/duration)*1000 << "mm/s" << endl;
+        
+        
         for( int legNum=0; legNum<6; legNum++){
 			
 			//cout << "Leg: " << legNum+1 << endl;
           
-            totalX = leg[legNum].initialFootPos.x + leg[legNum].legBasePos.x; 
-            totalY = leg[legNum].initialFootPos.y + leg[legNum].legBasePos.y;
-            
-            rotSpeedOffsetX[legNum] = totalY*sinRotZ + totalX*cosRotZ - totalX;  
-            rotSpeedOffsetY[legNum] = totalY*cosRotZ - totalX*sinRotZ - totalY; 
-            
-            if( abs(speedX + rotSpeedOffsetX[legNum]) > abs(speedY + rotSpeedOffsetY[legNum]) )  
-				amplitudeZ = ((speedX + rotSpeedOffsetX[legNum])*duration/3000.0); 
-            else
-				amplitudeZ = ((speedY + rotSpeedOffsetY[legNum])*duration/3000.0);
-				          
-            amplitudeX = ((speedX + rotSpeedOffsetX[legNum])*duration/2000.0);
-            amplitudeY = ((speedY + rotSpeedOffsetY[legNum])*duration/2000.0);
-            
+            //foot position in global space
+            gblInitFootPos.x = leg[legNum].initialFootPos.x + leg[legNum].legBasePos.x;
+            gblInitFootPos.y = leg[legNum].initialFootPos.y + leg[legNum].legBasePos.y;
+            				          
                       
             switch (caseStep[legNum]){
             
-                case 1: //forward raise and lower
-                
-					//cout << "Case 1, tick: " << tick << endl;
-                                      
-                    leg[legNum].footPos.x = -amplitudeX*cos(M_PI*tick/numTicks); 
-                    //cout << "footPos X: " << leg[legNum].footPos.x << endl;
-                    leg[legNum].footPos.y = -amplitudeY*cos(M_PI*tick/numTicks);
-                    //cout << "footPos Y: " << leg[legNum].footPos.y << endl;
-                    leg[legNum].footPos.z = -abs(amplitudeZ)*sin(M_PI*tick/numTicks);
-                    //cout << "footPos Z: " << leg[legNum].footPos.z << endl;
+                case 1: // forward raise and lower
+                        
+                    //cout << "Case 1, tick: " << tick << endl;
+                    
+                    //angle of rotation starting at half a stride back and building toward half a stride forward
+                    sinRotZ = sin(-radians(-speedR/2.0 + speedR*((float)tick/numTicks)));
+                    cosRotZ = cos(-radians(-speedR/2.0 + speedR*((float)tick/numTicks)));
+                    
+                    //rotate foot position about global Z axis
+                    rotSpeedOffsetX[legNum] = gblInitFootPos.x*cosRotZ - gblInitFootPos.y*sinRotZ - gblInitFootPos.x;
+                    rotSpeedOffsetY[legNum] = gblInitFootPos.x*sinRotZ + gblInitFootPos.y*cosRotZ - gblInitFootPos.y;
+
+                    //footPos is stride plus rotational offset
+                    leg[legNum].footPos.x = -amplitude.x*cos(M_PI*tick/numTicks) + rotSpeedOffsetX[legNum];
+                    leg[legNum].footPos.y = -amplitude.y*cos(M_PI*tick/numTicks) + rotSpeedOffsetY[legNum];
+                    leg[legNum].footPos.z =  amplitude.z*sin(M_PI*tick/numTicks);
                         
                     if( tick >= numTicks-1 ) caseStep[legNum] = 2;
                     break;
+    
                     
                 case 2: // pull back
                 
 					//cout << "Case 2, tick: " << tick << endl;
+                    
+                    sinRotZ = sin(-radians(speedR/2.0 - speedR*((float)tick/numTicks)));
+                    cosRotZ = cos(-radians(speedR/2.0 - speedR*((float)tick/numTicks)));
+                    
+                    //rotate foot position about global Z axis
+                    rotSpeedOffsetX[legNum] = gblInitFootPos.x*cosRotZ - gblInitFootPos.y*sinRotZ - gblInitFootPos.x;
+                    rotSpeedOffsetY[legNum] = gblInitFootPos.x*sinRotZ + gblInitFootPos.y*cosRotZ - gblInitFootPos.y;
                 
-                    leg[legNum].footPos.x = amplitudeX*cos(M_PI*tick/numTicks);
-                    //cout << "footPos X: " << leg[legNum].footPos.x << endl;
-                    leg[legNum].footPos.y = amplitudeY*cos(M_PI*tick/numTicks);
-                    //cout << "footPos Y: " << leg[legNum].footPos.y << endl;
+                    leg[legNum].footPos.x = amplitude.x - 2*amplitude.x*tick/numTicks  + rotSpeedOffsetX[legNum];
+                    leg[legNum].footPos.y = amplitude.y - 2*amplitude.y*tick/numTicks  + rotSpeedOffsetY[legNum];
                     leg[legNum].footPos.z = 0;
-                    //cout << "footPos Z: " << leg[legNum].footPos.z << endl;
                      
                     if( tick >= numTicks-1 ) caseStep[legNum] = 1;
                     break;             
@@ -258,128 +275,168 @@ void tripodGait(){
   
 **************************************************/
 void waveGait(){
-  
+    
     float sinRotZ, cosRotZ;
-    int totalX, totalY;
+    intCoordsStruct gblInitFootPos;
     float rotSpeedOffsetX[6], rotSpeedOffsetY[6];
-    float amplitudeX, amplitudeY, amplitudeZ;
+    floatCoordsStruct amplitude;
     int duration;
     int numTicks;
-    int speedX, speedY, speedR;
+    int speedX, speedY;
+    float speedR;
+    int numCasesPb;
+
           
     if( (abs(commanderInput.Xspeed) > 5) || (abs(commanderInput.Yspeed) > 5) || (abs(commanderInput.Rspeed) > 5 ) ){
                              
-        duration = 500;                               //duration of one step cycle (ms)      
-        numTicks = round(duration / SERVO_UPDATE_PERIOD / 2.0); //total ticks divided into the two cases   
+        duration = 250;                               //duration of one case (ms)      
+        numTicks = round( duration / SERVO_UPDATE_PERIOD ); //total ticks divided into the two cases   
+        numCasesPb = 5;
               
-        speedX = 180*commanderInput.Xspeed/127;        //180mm/s top speed for 180mmm stride in one sec
-        speedY = 180*commanderInput.Yspeed/127;        //180mm/s top speed
-        speedR = 40*commanderInput.Rspeed/127;         //40deg/s top rotation speed
-                    
-        sinRotZ = sin(radians(speedR));
-        cosRotZ = cos(radians(speedR));
-                 
+        speedX = 100*commanderInput.Xspeed/127;        //100mm/s top speed 
+        speedY = 100*commanderInput.Yspeed/127;        //100mm/s top speed
+        speedR = 30*commanderInput.Rspeed/127;         //15deg/s top rotation speed
+        
+        amplitude.x = (speedX*duration*numCasesPb/1000.0)/2.0; //amplitude is half of stride length
+        amplitude.y = (speedY*duration*numCasesPb/1000.0)/2.0;
+        
+        if( abs(commanderInput.Rspeed) > abs(commanderInput.Xspeed) && abs(commanderInput.Rspeed) > abs(commanderInput.Yspeed))
+            amplitude.z = -abs(50*commanderInput.Rspeed/127);
+        else if( abs(commanderInput.Xspeed) > abs(commanderInput.Yspeed) )
+            amplitude.z = -abs(50*commanderInput.Xspeed/127);
+        else
+            amplitude.z = -abs(50*commanderInput.Yspeed/127);
+        
+        //cout << "X Speed: " << (amplitude.x*2/(duration*numCasesPb))*1000 << "mm/s" << endl;
+
+        
         for( int legNum=0; legNum<6; legNum++){
 			
 			//cout << "Leg: " << legNum+1 << endl;
-          
-            totalX = leg[legNum].initialFootPos.x + leg[legNum].legBasePos.x; 
-            totalY = leg[legNum].initialFootPos.y + leg[legNum].legBasePos.y;
             
-            rotSpeedOffsetX[legNum] = totalY*sinRotZ + totalX*cosRotZ - totalX;  
-            rotSpeedOffsetY[legNum] = totalY*cosRotZ - totalX*sinRotZ - totalY; 
-            
-            if( abs(speedX + rotSpeedOffsetX[legNum]) > abs(speedY + rotSpeedOffsetY[legNum]) )  
-				amplitudeZ = ((speedX + rotSpeedOffsetX[legNum])*duration/3000.0); 
-            else
-				amplitudeZ = ((speedY + rotSpeedOffsetY[legNum])*duration/3000.0);
-				          
-            amplitudeX = ((speedX + rotSpeedOffsetX[legNum])*duration/2000.0);
-            amplitudeY = ((speedY + rotSpeedOffsetY[legNum])*duration/2000.0);
-            
+            //foot position in global space
+            gblInitFootPos.x = leg[legNum].initialFootPos.x + leg[legNum].legBasePos.x;
+            gblInitFootPos.y = leg[legNum].initialFootPos.y + leg[legNum].legBasePos.y;
+			
                       
             switch (caseStep[legNum]){
             
-                case 1: //forward raise and lower
+                case 1: // forward raise and lower
                 
-					//cout << "Case 1, tick: " << tick << endl;
-                                      
-                    leg[legNum].footPos.x = -amplitudeX*cos(M_PI*tick/numTicks); 
-                    //cout << "footPos X: " << leg[legNum].footPos.x << endl;
-                    leg[legNum].footPos.y = -amplitudeY*cos(M_PI*tick/numTicks);
-                    //cout << "footPos Y: " << leg[legNum].footPos.y << endl;
-                    leg[legNum].footPos.z = -abs(amplitudeZ)*sin(M_PI*tick/numTicks);
-                    //cout << "footPos Z: " << leg[legNum].footPos.z << endl;
+					//if(legNum==1) cout << "Case 1, tick: " << tick << endl;
+                    
+                    //angle of rotation starting at half a stride back and building toward half a stride forward
+                    sinRotZ = sin(-radians( -speedR/2.0 + speedR*tick/numTicks ));
+                    cosRotZ = cos(-radians( -speedR/2.0 + speedR*tick/numTicks ));
+                    
+                    //rotate foot position about global Z axis
+                    rotSpeedOffsetX[legNum] = gblInitFootPos.x*cosRotZ - gblInitFootPos.y*sinRotZ - gblInitFootPos.x;
+                    rotSpeedOffsetY[legNum] = gblInitFootPos.x*sinRotZ + gblInitFootPos.y*cosRotZ - gblInitFootPos.y;
+                    
+                    leg[legNum].footPos.x = round( -amplitude.x*cos(M_PI*tick/numTicks) + rotSpeedOffsetX[legNum] );
+                    leg[legNum].footPos.y = round( -amplitude.y*cos(M_PI*tick/numTicks) + rotSpeedOffsetY[legNum] );
+                    leg[legNum].footPos.z = round(  amplitude.z*sin(M_PI*tick/numTicks) );
+                    //if(legNum==1) cout << "footPos X, Y, Z: " << leg[legNum].footPos.x << ", " << leg[legNum].footPos.y << ", " << leg[legNum].footPos.z << endl;
                         
                     if( tick >= numTicks-1 ) caseStep[legNum] = 2;
                     break;
                     
                 case 2: // pull back slowly
                 
-					//cout << "Case 2, tick: " << tick << endl;
+					//if(legNum==1) cout << "Case 2, tick: " << tick << endl;
+                    
+                    //angle of rotation starting at half a stride back and building toward half a stride forward
+                    sinRotZ = sin(-radians( speedR/2.0 - speedR*tick/(5.0*numTicks) ));
+                    cosRotZ = cos(-radians( speedR/2.0 - speedR*tick/(5.0*numTicks) ));
+                    
+                    //rotate foot position about global Z axis
+                    rotSpeedOffsetX[legNum] = gblInitFootPos.x*cosRotZ - gblInitFootPos.y*sinRotZ - gblInitFootPos.x;
+                    rotSpeedOffsetY[legNum] = gblInitFootPos.x*sinRotZ + gblInitFootPos.y*cosRotZ - gblInitFootPos.y;
                 
-                    leg[legNum].footPos.x = amplitudeX*cos(M_PI*tick/(5*numTicks));
-                    //cout << "footPos X: " << leg[legNum].footPos.x << endl;
-                    leg[legNum].footPos.y = amplitudeY*cos(M_PI*tick/(5*numTicks));
-                    //cout << "footPos Y: " << leg[legNum].footPos.y << endl;
+                    leg[legNum].footPos.x = round( amplitude.x - 2.0*amplitude.x*tick/(5.0*numTicks) + rotSpeedOffsetX[legNum] );
+                    leg[legNum].footPos.y = round( amplitude.y - 2.0*amplitude.y*tick/(5.0*numTicks) + rotSpeedOffsetY[legNum] );
                     leg[legNum].footPos.z = 0;
-                    //cout << "footPos Z: " << leg[legNum].footPos.z << endl;
+
                      
                     if( tick >= numTicks-1 ) caseStep[legNum] = 3;
                     break;             
        
 				case 3: // pull back slowly
                 
-					//cout << "Case 2, tick: " << tick << endl;
+					//if(legNum==1) cout << "Case 3, tick: " << tick << endl;
+                    
+                    //angle of rotation starting at half a stride back and building toward half a stride forward
+                    sinRotZ = sin(-radians( speedR/2.0 - speedR*(tick+numTicks)/(5.0*numTicks) ));
+                    cosRotZ = cos(-radians( speedR/2.0 - speedR*(tick+numTicks)/(5.0*numTicks) ));
+                    
+                    //rotate foot position about global Z axis
+                    rotSpeedOffsetX[legNum] = gblInitFootPos.x*cosRotZ - gblInitFootPos.y*sinRotZ - gblInitFootPos.x;
+                    rotSpeedOffsetY[legNum] = gblInitFootPos.x*sinRotZ + gblInitFootPos.y*cosRotZ - gblInitFootPos.y;
                 
-                    leg[legNum].footPos.x = amplitudeX*cos(M_PI*(tick+numTicks)/(5*numTicks));
-                    //cout << "footPos X: " << leg[legNum].footPos.x << endl;
-                    leg[legNum].footPos.y = amplitudeY*cos(M_PI*(tick+numTicks)/(5*numTicks));
-                    //cout << "footPos Y: " << leg[legNum].footPos.y << endl;
+                    leg[legNum].footPos.x = round( amplitude.x - 2.0*amplitude.x*(tick+numTicks)/(5.0*numTicks) + rotSpeedOffsetX[legNum] );
+                    leg[legNum].footPos.y = round( amplitude.y - 2.0*amplitude.y*(tick+numTicks)/(5.0*numTicks) + rotSpeedOffsetY[legNum] );
                     leg[legNum].footPos.z = 0;
-                    //cout << "footPos Z: " << leg[legNum].footPos.z << endl;
-                     
+
+                    
                     if( tick >= numTicks-1 ) caseStep[legNum] = 4;
                     break;             
                     
                 case 4: // pull back slowly
                 
-					//cout << "Case 2, tick: " << tick << endl;
+					//if(legNum==1) cout << "Case 4, tick: " << tick << endl;
+                    
+                    //angle of rotation starting at half a stride back and building toward half a stride forward
+                    sinRotZ = sin(-radians( speedR/2.0 - speedR*(tick+2.0*numTicks)/(5.0*numTicks) ));
+                    cosRotZ = cos(-radians( speedR/2.0 - speedR*(tick+2.0*numTicks)/(5.0*numTicks) ));
+                    
+                    //rotate foot position about global Z axis
+                    rotSpeedOffsetX[legNum] = gblInitFootPos.x*cosRotZ - gblInitFootPos.y*sinRotZ - gblInitFootPos.x;
+                    rotSpeedOffsetY[legNum] = gblInitFootPos.x*sinRotZ + gblInitFootPos.y*cosRotZ - gblInitFootPos.y;
                 
-                    leg[legNum].footPos.x = amplitudeX*cos(M_PI*(tick+2*numTicks)/(5*numTicks));
-                    //cout << "footPos X: " << leg[legNum].footPos.x << endl;
-                    leg[legNum].footPos.y = amplitudeY*cos(M_PI*(tick+2*numTicks)/(5*numTicks));
-                    //cout << "footPos Y: " << leg[legNum].footPos.y << endl;
+                    leg[legNum].footPos.x = round( amplitude.x - 2.0*amplitude.x*(tick+2.0*numTicks)/(5.0*numTicks) + rotSpeedOffsetX[legNum] );
+                    leg[legNum].footPos.y = round( amplitude.y - 2.0*amplitude.y*(tick+2.0*numTicks)/(5.0*numTicks) + rotSpeedOffsetY[legNum] );
                     leg[legNum].footPos.z = 0;
-                    //cout << "footPos Z: " << leg[legNum].footPos.z << endl;
+
                      
                     if( tick >= numTicks-1 ) caseStep[legNum] = 5;
                     break;             
                     
 				case 5: // pull back slowly
                 
-					//cout << "Case 2, tick: " << tick << endl;
+					//if(legNum==1) cout << "Case 5, tick: " << tick << endl;
                 
-                    leg[legNum].footPos.x = amplitudeX*cos(M_PI*(tick+3*numTicks)/(5*numTicks));
-                    //cout << "footPos X: " << leg[legNum].footPos.x << endl;
-                    leg[legNum].footPos.y = amplitudeY*cos(M_PI*(tick+3*numTicks)/(5*numTicks));
-                    //cout << "footPos Y: " << leg[legNum].footPos.y << endl;
+                    //angle of rotation starting at half a stride back and building toward half a stride forward
+                    sinRotZ = sin(-radians( speedR/2.0 - speedR*(tick+3.0*numTicks)/(5.0*numTicks) ));
+                    cosRotZ = cos(-radians( speedR/2.0 - speedR*(tick+3.0*numTicks)/(5.0*numTicks) ));
+                    
+                    //rotate foot position about global Z axis
+                    rotSpeedOffsetX[legNum] = gblInitFootPos.x*cosRotZ - gblInitFootPos.y*sinRotZ - gblInitFootPos.x;
+                    rotSpeedOffsetY[legNum] = gblInitFootPos.x*sinRotZ + gblInitFootPos.y*cosRotZ - gblInitFootPos.y;
+                    
+                    leg[legNum].footPos.x = round( amplitude.x - 2.0*amplitude.x*(tick+3.0*numTicks)/(5.0*numTicks) + rotSpeedOffsetX[legNum] );
+                    leg[legNum].footPos.y = round( amplitude.y - 2.0*amplitude.y*(tick+3.0*numTicks)/(5.0*numTicks) + rotSpeedOffsetY[legNum] );
                     leg[legNum].footPos.z = 0;
-                    //cout << "footPos Z: " << leg[legNum].footPos.z << endl;
+
                      
                     if( tick >= numTicks-1 ) caseStep[legNum] = 6;
                     break;             
                     
                 case 6: // pull back
                 
-					//cout << "Case 2, tick: " << tick << endl;
+					//if(legNum==1) cout << "Case 6, tick: " << tick << endl;
                 
-                    leg[legNum].footPos.x = amplitudeX*cos(M_PI*(tick+4*numTicks)/(5*numTicks));
-                    //cout << "footPos X: " << leg[legNum].footPos.x << endl;
-                    leg[legNum].footPos.y = amplitudeY*cos(M_PI*(tick+4*numTicks)/(5*numTicks));
-                    //cout << "footPos Y: " << leg[legNum].footPos.y << endl;
+                    //angle of rotation starting at half a stride back and building toward half a stride forward
+                    sinRotZ = sin(-radians( speedR/2.0 - speedR*(tick+4.0*numTicks)/(5.0*numTicks) ));
+                    cosRotZ = cos(-radians( speedR/2.0 - speedR*(tick+4.0*numTicks)/(5.0*numTicks) ));
+                    
+                    //rotate foot position about global Z axis
+                    rotSpeedOffsetX[legNum] = gblInitFootPos.x*cosRotZ - gblInitFootPos.y*sinRotZ - gblInitFootPos.x;
+                    rotSpeedOffsetY[legNum] = gblInitFootPos.x*sinRotZ + gblInitFootPos.y*cosRotZ - gblInitFootPos.y;
+                    
+                    leg[legNum].footPos.x = round( amplitude.x - 2.0*amplitude.x*(tick+4.0*numTicks)/(5.0*numTicks) + rotSpeedOffsetX[legNum] );
+                    leg[legNum].footPos.y = round( amplitude.y - 2.0*amplitude.y*(tick+4.0*numTicks)/(5.0*numTicks) + rotSpeedOffsetY[legNum] );
                     leg[legNum].footPos.z = 0;
-                    //cout << "footPos Z: " << leg[legNum].footPos.z << endl;
+
                      
                     if( tick >= numTicks-1 ) caseStep[legNum] = 1;
                     break;             
@@ -394,23 +451,205 @@ void waveGait(){
 }
 
 
+
+/*************************************************
+  rippleGait()
+  
+**************************************************/
+void rippleGait(){
+    
+    float sinRotZ, cosRotZ;
+    intCoordsStruct gblInitFootPos;
+    float rotSpeedOffsetX[6], rotSpeedOffsetY[6];
+    floatCoordsStruct amplitude;
+    int duration;
+    int numTicks;
+    int speedX, speedY;
+    float speedR;
+    int numCasesPb;
+    
+    if( (abs(commanderInput.Xspeed) > 5) || (abs(commanderInput.Yspeed) > 5) || (abs(commanderInput.Rspeed) > 5 ) ){
+                             
+        duration = 125;                               //duration of one case (ms)     
+        numTicks = round( duration / SERVO_UPDATE_PERIOD ); //total ticks in one case
+        numCasesPb = 4;  
+              
+        speedX = 200*commanderInput.Xspeed/127;        //(mm/s) top speed
+        speedY = 200*commanderInput.Yspeed/127;        //(mm/s) top speed
+        speedR = 30*commanderInput.Rspeed/127;         //(deg/s) top rotation speed
+                    
+        amplitude.x = (speedX*duration*numCasesPb/1000.0)/2.0; //amplitude is half of stride length
+        amplitude.y = (speedY*duration*numCasesPb/1000.0)/2.0;
+        
+        if( abs(commanderInput.Rspeed) > abs(commanderInput.Xspeed) && abs(commanderInput.Rspeed) > abs(commanderInput.Yspeed))
+            amplitude.z = -abs(50*commanderInput.Rspeed/127);
+        else if( abs(commanderInput.Xspeed) > abs(commanderInput.Yspeed) )
+            amplitude.z = -abs(50*commanderInput.Xspeed/127);
+        else
+            amplitude.z = -abs(50*commanderInput.Yspeed/127);
+        
+        //cout << "X Speed: " << (amplitude.x*2/(duration*numCasesPb))*1000 << "mm/s" << endl;
+
+        
+        for( int legNum=0; legNum<6; legNum++){
+			
+			//cout << "Leg: " << legNum+1 << endl;
+            
+            //foot position in global space
+            gblInitFootPos.x = leg[legNum].initialFootPos.x + leg[legNum].legBasePos.x;
+            gblInitFootPos.y = leg[legNum].initialFootPos.y + leg[legNum].legBasePos.y;
+            
+            
+            switch (caseStep[legNum]){
+            
+                case 1: //forward raise
+                
+					//cout << "Case 1, Leg: " << legNum << " Tick: " << tick << endl;
+                    
+                    //angle of rotation starting at half a stride back and building toward half a stride forward
+                    sinRotZ = sin(-radians( -speedR/2.0 + speedR*tick/(2.0*numTicks) ));
+                    cosRotZ = cos(-radians( -speedR/2.0 + speedR*tick/(2.0*numTicks) ));
+                    
+                    //rotate foot position about global Z axis
+                    rotSpeedOffsetX[legNum] = gblInitFootPos.x*cosRotZ - gblInitFootPos.y*sinRotZ - gblInitFootPos.x;
+                    rotSpeedOffsetY[legNum] = gblInitFootPos.x*sinRotZ + gblInitFootPos.y*cosRotZ - gblInitFootPos.y;
+                    
+                    leg[legNum].footPos.x = round( -amplitude.x*cos(M_PI*tick/(2.0*numTicks)) + rotSpeedOffsetX[legNum] );
+                    leg[legNum].footPos.y = round( -amplitude.y*cos(M_PI*tick/(2.0*numTicks)) + rotSpeedOffsetY[legNum] );
+                    leg[legNum].footPos.z = round(  amplitude.z*sin(M_PI*tick/(2.0*numTicks)) );
+                    //if(legNum==1) cout << "footPos X, Y, Z: " << leg[legNum].footPos.x << ", " << leg[legNum].footPos.y << ", " << leg[legNum].footPos.z << endl;
+
+					
+                    if( tick >= numTicks-1 ) caseStep[legNum] = 2;
+                    break;
+                    
+                case 2: // forward lower
+                
+					//cout << "Case 2, Leg: " << legNum << " Tick: " << tick << endl;
+                    
+                    //angle of rotation starting at half a stride back and building toward half a stride forward
+                    sinRotZ = sin(-radians( -speedR/2.0 + speedR*(tick+numTicks)/(2.0*numTicks) ));
+                    cosRotZ = cos(-radians( -speedR/2.0 + speedR*(tick+numTicks)/(2.0*numTicks) ));
+                    
+                    //rotate foot position about global Z axis
+                    rotSpeedOffsetX[legNum] = gblInitFootPos.x*cosRotZ - gblInitFootPos.y*sinRotZ - gblInitFootPos.x;
+                    rotSpeedOffsetY[legNum] = gblInitFootPos.x*sinRotZ + gblInitFootPos.y*cosRotZ - gblInitFootPos.y;
+                    
+                    leg[legNum].footPos.x = round( -amplitude.x*cos(M_PI*(tick+numTicks)/(2.0*numTicks)) + rotSpeedOffsetX[legNum] );
+                    leg[legNum].footPos.y = round( -amplitude.y*cos(M_PI*(tick+numTicks)/(2.0*numTicks)) + rotSpeedOffsetY[legNum] );
+                    leg[legNum].footPos.z = round(  amplitude.z*sin(M_PI*(tick+numTicks)/(2.0*numTicks)) );
+                    //if(legNum==1) cout << "footPos X, Y, Z: " << leg[legNum].footPos.x << ", " << leg[legNum].footPos.y << ", " << leg[legNum].footPos.z << endl;
+                    
+				 
+                    if( tick >= numTicks-1 ) caseStep[legNum] = 3;
+                    break;             
+       
+				case 3: // pull back slowly
+                
+					//cout << "Case 2, tick: " << tick << endl;
+                    
+                    //angle of rotation starting at half a stride back and building toward half a stride forward
+                    sinRotZ = sin(-radians( speedR/2.0 - speedR*tick/(4.0*numTicks) ));
+                    cosRotZ = cos(-radians( speedR/2.0 - speedR*tick/(4.0*numTicks) ));
+                    
+                    //rotate foot position about global Z axis
+                    rotSpeedOffsetX[legNum] = gblInitFootPos.x*cosRotZ - gblInitFootPos.y*sinRotZ - gblInitFootPos.x;
+                    rotSpeedOffsetY[legNum] = gblInitFootPos.x*sinRotZ + gblInitFootPos.y*cosRotZ - gblInitFootPos.y;
+                    
+                    leg[legNum].footPos.x = round( amplitude.x - 2.0*amplitude.x*tick/(4.0*numTicks) + rotSpeedOffsetX[legNum] );
+                    leg[legNum].footPos.y = round( amplitude.y - 2.0*amplitude.y*tick/(4.0*numTicks) + rotSpeedOffsetY[legNum] );
+                    leg[legNum].footPos.z = 0;
+
+                     
+                    if( tick >= numTicks-1 ) caseStep[legNum] = 4;
+                    break;             
+                    
+                case 4: // pull back slowly
+                
+					//cout << "Case 2, tick: " << tick << endl;
+                    
+                    //angle of rotation starting at half a stride back and building toward half a stride forward
+                    sinRotZ = sin(-radians( speedR/2.0 - speedR*(tick+numTicks)/(4.0*numTicks) ));
+                    cosRotZ = cos(-radians( speedR/2.0 - speedR*(tick+numTicks)/(4.0*numTicks) ));
+                    
+                    //rotate foot position about global Z axis
+                    rotSpeedOffsetX[legNum] = gblInitFootPos.x*cosRotZ - gblInitFootPos.y*sinRotZ - gblInitFootPos.x;
+                    rotSpeedOffsetY[legNum] = gblInitFootPos.x*sinRotZ + gblInitFootPos.y*cosRotZ - gblInitFootPos.y;
+                    
+                    leg[legNum].footPos.x = round( amplitude.x - 2.0*amplitude.x*(tick+numTicks)/(4.0*numTicks) + rotSpeedOffsetX[legNum] );
+                    leg[legNum].footPos.y = round( amplitude.y - 2.0*amplitude.y*(tick+numTicks)/(4.0*numTicks) + rotSpeedOffsetY[legNum] );
+                    leg[legNum].footPos.z = 0;
+
+                     
+                    if( tick >= numTicks-1 ) caseStep[legNum] = 5;
+                    break;             
+                    
+				case 5: // pull back slowly
+                
+					//cout << "Case 2, tick: " << tick << endl;
+                    
+                    //angle of rotation starting at half a stride back and building toward half a stride forward
+                    sinRotZ = sin(-radians( speedR/2.0 - speedR*(tick+2.0*numTicks)/(4.0*numTicks) ));
+                    cosRotZ = cos(-radians( speedR/2.0 - speedR*(tick+2.0*numTicks)/(4.0*numTicks) ));
+                    
+                    //rotate foot position about global Z axis
+                    rotSpeedOffsetX[legNum] = gblInitFootPos.x*cosRotZ - gblInitFootPos.y*sinRotZ - gblInitFootPos.x;
+                    rotSpeedOffsetY[legNum] = gblInitFootPos.x*sinRotZ + gblInitFootPos.y*cosRotZ - gblInitFootPos.y;
+                    
+                    leg[legNum].footPos.x = round( amplitude.x - 2.0*amplitude.x*(tick+2.0*numTicks)/(4.0*numTicks) + rotSpeedOffsetX[legNum] );
+                    leg[legNum].footPos.y = round( amplitude.y - 2.0*amplitude.y*(tick+2.0*numTicks)/(4.0*numTicks) + rotSpeedOffsetY[legNum] );
+                    leg[legNum].footPos.z = 0;
+
+                     
+                    if( tick >= numTicks-1 ) caseStep[legNum] = 6;
+                    break;             
+                    
+                case 6: // pull back
+                
+					//cout << "Case 2, tick: " << tick << endl;
+                    
+                    //angle of rotation starting at half a stride back and building toward half a stride forward
+                    sinRotZ = sin(-radians( speedR/2.0 - speedR*(tick+3.0*numTicks)/(4.0*numTicks) ));
+                    cosRotZ = cos(-radians( speedR/2.0 - speedR*(tick+3.0*numTicks)/(4.0*numTicks) ));
+                    
+                    //rotate foot position about global Z axis
+                    rotSpeedOffsetX[legNum] = gblInitFootPos.x*cosRotZ - gblInitFootPos.y*sinRotZ - gblInitFootPos.x;
+                    rotSpeedOffsetY[legNum] = gblInitFootPos.x*sinRotZ + gblInitFootPos.y*cosRotZ - gblInitFootPos.y;
+                    
+                    leg[legNum].footPos.x = round( amplitude.x - 2.0*amplitude.x*(tick+3.0*numTicks)/(4.0*numTicks) + rotSpeedOffsetX[legNum] );
+                    leg[legNum].footPos.y = round( amplitude.y - 2.0*amplitude.y*(tick+3.0*numTicks)/(4.0*numTicks) + rotSpeedOffsetY[legNum] );
+                    leg[legNum].footPos.z = 0;
+
+                     
+                    if( tick >= numTicks-1 ) caseStep[legNum] = 1;
+                    break;      
+                                          
+                           
+          }// end of case statement
+                             
+        }// end of loop over legs
+        if (tick < numTicks-1) tick++;
+        else tick = 0;
+      
+    }//end if joystick active
+
+}
+
+
+
+
 /*************************************************
   readCommandInputs()
   Reads input from Commander controller and saves them as variables
 **************************************************/
 void readCommandInputs(){
   
-  //cout << "Read Commander Inputs" << endl;
-  
-  //commanderInput.Xspeed = 80;
-  //commanderInput.Yspeed = 127;
-  //commanderInput.Rspeed = 80;
-  
-
   
 	if(command.ReadMsgs() > 0){
 	  
 		//digitalWrite( ledPin, HIGH-digitalRead(ledPin) );
+		
+		
 		if( command.buttons&BUT_R1 ){
 			mode = 0;   
 			cout << "Mode 0, Normal Operation" << endl;   
@@ -427,7 +666,7 @@ void readCommandInputs(){
 		if( command.buttons&BUT_L6 ){
 			gaitSelect = 0;   
 			cout << "Tripod Gait" << endl;   
-			caseStep[0] = 1; //for tripod gait
+			caseStep[0] = 1; 
 			caseStep[1] = 2;
 			caseStep[2] = 1;
 			caseStep[3] = 2;
@@ -437,21 +676,28 @@ void readCommandInputs(){
 		if( command.buttons&BUT_L5 ){
 			gaitSelect = 1;
 			cout << "Wave Gait" << endl;
-			caseStep[0] = 4; //for wave gait
+			caseStep[0] = 4; 
 			caseStep[1] = 5;
 			caseStep[2] = 6;
 			caseStep[3] = 3;
 			caseStep[4] = 2;
 			caseStep[5] = 1;
 		}
-		
+		if( command.buttons&BUT_L4 ){
+			gaitSelect = 2;
+			cout << "Ripple Gait" << endl;
+			caseStep[0] = 2; 
+			caseStep[1] = 6;
+			caseStep[2] = 4;
+			caseStep[3] = 1;
+			caseStep[4] = 3;
+			caseStep[5] = 5;
+		}
 		if( command.buttons&BUT_LT && command.buttons&BUT_RT ){
 			
 			cout << "SHUTTING DOWN!" << endl;		
 			runLoop = 0;			
 		}
-
-
           
 		if( mode == 1 ){
 			commanderInput.bodyTransX = command.leftV / 3;
@@ -467,7 +713,7 @@ void readCommandInputs(){
 		else if( mode == 2 ){
 			commanderInput.bodyRotX = command.leftH / 10.0;
 			commanderInput.bodyRotY = command.leftV / 10.0;
-			commanderInput.bodyRotZ = command.rightH / 7.0;      
+			commanderInput.bodyRotZ = -command.rightH / 7.0;      
 			commanderInput.Rspeed = 0;
 			commanderInput.Xspeed = 0;
 			commanderInput.Yspeed = 0;  
@@ -475,8 +721,7 @@ void readCommandInputs(){
 			commanderInput.bodyTransY = 0;
 			commanderInput.bodyTransZ = 0; 
 		}
-		else{
-			
+		else{		
 			commanderInput.bodyTransX = 0; 
 			commanderInput.bodyTransY = 0;
 			commanderInput.bodyTransZ = 0; 
@@ -495,14 +740,13 @@ void readCommandInputs(){
 			else commanderInput.Yspeed = 0;
       
 			if( abs(command.rightH) > 5 ){
-				commanderInput.Rspeed = command.rightH;
+				commanderInput.Rspeed = -command.rightH;
 			}
 			else commanderInput.Rspeed = 0;
  
 		}
   }
 }
-
 
 
 float radians( float deg){

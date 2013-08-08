@@ -46,12 +46,13 @@ void bodyFK(){
     float bodyRotOffsetX[6], bodyRotOffsetY[6], bodyRotOffsetZ[6];
     intCoordsStruct globalInitFootPos;
   
-    sinRotX = sin(radians( commanderInput.bodyRotX));
-    cosRotX = cos(radians( commanderInput.bodyRotX));
-    sinRotY = sin(radians(-commanderInput.bodyRotY));
-    cosRotY = cos(radians(-commanderInput.bodyRotY));
-    sinRotZ = sin(radians( commanderInput.bodyRotZ));
-    cosRotZ = cos(radians( commanderInput.bodyRotZ));
+    sinRotX = sin(radians(commanderInput.bodyRotX));
+    cosRotX = cos(radians(commanderInput.bodyRotX));
+    sinRotY = sin(radians(commanderInput.bodyRotY));
+    cosRotY = cos(radians(commanderInput.bodyRotY));
+    sinRotZ = sin(radians(commanderInput.bodyRotZ));
+    cosRotZ = cos(radians(commanderInput.bodyRotZ));
+    
   
     for( int legNum=0; legNum<6; legNum++){ 
         
@@ -77,23 +78,23 @@ void bodyFK(){
     }
      
     // Rotates X,Y about coxa to compensate for coxa mounting angles.
-    leg[0].footPosCalc.x = round( bodyRotOffsetY[0]*cos(radians(COXA_ANGLE))   - bodyRotOffsetX[0]*sin(radians(COXA_ANGLE)) ); 
-    leg[0].footPosCalc.y = round( bodyRotOffsetY[0]*sin(radians(COXA_ANGLE))   + bodyRotOffsetX[0]*cos(radians(COXA_ANGLE)) );
+    leg[0].footPosCalc.x = bodyRotOffsetY[0]*cos(radians(COXA_ANGLE))   - bodyRotOffsetX[0]*sin(radians(COXA_ANGLE)); 
+    leg[0].footPosCalc.y = bodyRotOffsetY[0]*sin(radians(COXA_ANGLE))   + bodyRotOffsetX[0]*cos(radians(COXA_ANGLE));
     leg[0].footPosCalc.z = bodyRotOffsetZ[0];
-    leg[1].footPosCalc.x = round( bodyRotOffsetY[1]*cos(radians(COXA_ANGLE*2)) - bodyRotOffsetX[1]*sin(radians(COXA_ANGLE*2)) );
-    leg[1].footPosCalc.y = round( bodyRotOffsetY[1]*sin(radians(COXA_ANGLE*2)) + bodyRotOffsetX[1]*cos(radians(COXA_ANGLE*2)) );
+    leg[1].footPosCalc.x = bodyRotOffsetY[1]*cos(radians(COXA_ANGLE*2)) - bodyRotOffsetX[1]*sin(radians(COXA_ANGLE*2));
+    leg[1].footPosCalc.y = bodyRotOffsetY[1]*sin(radians(COXA_ANGLE*2)) + bodyRotOffsetX[1]*cos(radians(COXA_ANGLE*2));
     leg[1].footPosCalc.z = bodyRotOffsetZ[1];
-    leg[2].footPosCalc.x = round( bodyRotOffsetY[2]*cos(radians(COXA_ANGLE*3)) - bodyRotOffsetX[2]*sin(radians(COXA_ANGLE*3)) );
-    leg[2].footPosCalc.y = round( bodyRotOffsetY[2]*sin(radians(COXA_ANGLE*3)) + bodyRotOffsetX[2]*cos(radians(COXA_ANGLE*3)) );
+    leg[2].footPosCalc.x = bodyRotOffsetY[2]*cos(radians(COXA_ANGLE*3)) - bodyRotOffsetX[2]*sin(radians(COXA_ANGLE*3));
+    leg[2].footPosCalc.y = bodyRotOffsetY[2]*sin(radians(COXA_ANGLE*3)) + bodyRotOffsetX[2]*cos(radians(COXA_ANGLE*3));
     leg[2].footPosCalc.z = bodyRotOffsetZ[2];
-    leg[3].footPosCalc.x = round( bodyRotOffsetY[3]*cos(radians(COXA_ANGLE*5)) - bodyRotOffsetX[3]*sin(radians(COXA_ANGLE*5)) );
-    leg[3].footPosCalc.y = round( bodyRotOffsetY[3]*sin(radians(COXA_ANGLE*5)) + bodyRotOffsetX[3]*cos(radians(COXA_ANGLE*5)) );
+    leg[3].footPosCalc.x = bodyRotOffsetY[3]*cos(radians(COXA_ANGLE*5)) - bodyRotOffsetX[3]*sin(radians(COXA_ANGLE*5));
+    leg[3].footPosCalc.y = bodyRotOffsetY[3]*sin(radians(COXA_ANGLE*5)) + bodyRotOffsetX[3]*cos(radians(COXA_ANGLE*5));
     leg[3].footPosCalc.z = bodyRotOffsetZ[3];
-    leg[4].footPosCalc.x = round( bodyRotOffsetY[4]*cos(radians(COXA_ANGLE*6)) - bodyRotOffsetX[4]*sin(radians(COXA_ANGLE*6)) );
-    leg[4].footPosCalc.y = round( bodyRotOffsetY[4]*sin(radians(COXA_ANGLE*6)) + bodyRotOffsetX[4]*cos(radians(COXA_ANGLE*6)) );
+    leg[4].footPosCalc.x = bodyRotOffsetY[4]*cos(radians(COXA_ANGLE*6)) - bodyRotOffsetX[4]*sin(radians(COXA_ANGLE*6));
+    leg[4].footPosCalc.y = bodyRotOffsetY[4]*sin(radians(COXA_ANGLE*6)) + bodyRotOffsetX[4]*cos(radians(COXA_ANGLE*6));
     leg[4].footPosCalc.z = bodyRotOffsetZ[4];
-    leg[5].footPosCalc.x = round( bodyRotOffsetY[5]*cos(radians(COXA_ANGLE*7)) - bodyRotOffsetX[5]*sin(radians(COXA_ANGLE*7)) );
-    leg[5].footPosCalc.y = round( bodyRotOffsetY[5]*sin(radians(COXA_ANGLE*7)) + bodyRotOffsetX[5]*cos(radians(COXA_ANGLE*7)) );
+    leg[5].footPosCalc.x = bodyRotOffsetY[5]*cos(radians(COXA_ANGLE*7)) - bodyRotOffsetX[5]*sin(radians(COXA_ANGLE*7));
+    leg[5].footPosCalc.y = bodyRotOffsetY[5]*sin(radians(COXA_ANGLE*7)) + bodyRotOffsetX[5]*cos(radians(COXA_ANGLE*7));
     leg[5].footPosCalc.z = bodyRotOffsetZ[5];
     
 /*    for( int legNum=0; legNum<6; legNum++){ 
@@ -126,14 +127,14 @@ void legIK(){
         //cout << "IKSW : " << IKSW  << endl;
         IKA1 = atan2( (CoxaFootDist - LENGTH_COXA) , leg[legNum].footPosCalc.z );
         //cout << "IKA1: " << IKA1 << endl;
-        IKA2 = acos( (pow(LENGTH_TIBIA,2) - pow(LENGTH_FEMUR,2) - pow(IKSW,2) ) / (-2*IKSW*LENGTH_FEMUR) );
+        IKA2 = acos( (pow(LENGTH_TIBIA,2) - pow(LENGTH_FEMUR,2) - pow(IKSW,2) ) / (-2.0*IKSW*LENGTH_FEMUR) );
         //cout << "IKA2: " << IKA2 << endl;
-        tibAngle = acos( (pow(IKSW,2) - pow(LENGTH_TIBIA,2) - pow(LENGTH_FEMUR,2)) / (-2*LENGTH_FEMUR*LENGTH_TIBIA) );
+        tibAngle = acos( (pow(IKSW,2) - pow(LENGTH_TIBIA,2) - pow(LENGTH_FEMUR,2)) / (-2.0*LENGTH_FEMUR*LENGTH_TIBIA) );
         //cout << "tibAngle: " << tibAngle << endl;
         
-        leg[legNum].jointAngles.coxa  = 90 - degrees( atan2( leg[legNum].footPosCalc.y , leg[legNum].footPosCalc.x) ); 
-        leg[legNum].jointAngles.femur = 90 - degrees( IKA1 + IKA2 );
-        leg[legNum].jointAngles.tibia = 90 - degrees( tibAngle );
+        leg[legNum].jointAngles.coxa  = 90.0 - degrees( atan2( leg[legNum].footPosCalc.y , leg[legNum].footPosCalc.x) ); 
+        leg[legNum].jointAngles.femur = 90.0 - degrees( IKA1 + IKA2 );
+        leg[legNum].jointAngles.tibia = 90.0 - degrees( tibAngle );
                       
         //cout << "Coxa Angle: " << leg[legNum].jointAngles.coxa << endl;
         //cout << "Femur Angle: " << leg[legNum].jointAngles.femur << endl; 
@@ -167,11 +168,11 @@ void legIK(){
 void driveServos(){
   
     for( int legNum=0; legNum<6; legNum++ ){
-        leg[legNum].servoPos.coxa  = round((abs( leg[legNum].jointAngles.coxa  - 210) - 60 )  / 0.293);
+        leg[legNum].servoPos.coxa  = round((abs( leg[legNum].jointAngles.coxa  - 210.0) - 60.0 )  / 0.293);
         //cout << "Coxa Pos: " << leg[legNum].servoPos.coxa << endl;
-        leg[legNum].servoPos.femur = round((abs( leg[legNum].jointAngles.femur - 210) - 60 )  / 0.293);
+        leg[legNum].servoPos.femur = round((abs( leg[legNum].jointAngles.femur - 210.0) - 60.0 )  / 0.293);
         //cout << "Femur Pos: " << leg[legNum].servoPos.femur << endl;
-        leg[legNum].servoPos.tibia = round((abs( leg[legNum].jointAngles.tibia - 210) - 60 )  / 0.293);
+        leg[legNum].servoPos.tibia = round((abs( leg[legNum].jointAngles.tibia - 210.0) - 60.0 )  / 0.293);
         //cout << "Tibia Pos: " << leg[legNum].servoPos.tibia << endl;
     }
       

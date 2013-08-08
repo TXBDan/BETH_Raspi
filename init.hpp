@@ -10,7 +10,8 @@ const int faultLEDpin = 1;  // 1 Pi pin 18
 							// 6 Pi pin 25
 							// 7 Pi pin 4
 
-const int rideHeightOffset = -40; // -32mm means body at 100mm off ground
+const int rideHeightOffset = -40; 	// -32mm means body at 100mm off ground
+const int initLegStretch = 20;		// initial foot position stretch out
 
 
 /* Servo IDs */
@@ -75,19 +76,19 @@ struct intCoordsStruct{
   int z;
 };
 
-struct longCoordsStruct{
-  long x;
-  long y;
-  long z;
+struct floatCoordsStruct{
+  float x;
+  float y;
+  float z;
 };
 
-struct jointAnglesStruct{
+struct floatJointsStruct{
   float coxa;
   float femur;
   float tibia;
 };
 
-struct servoPosStruct{
+struct intJointsStruct{
   int coxa;
   int femur;
   int tibia;
@@ -98,9 +99,9 @@ struct legStruct{
   intCoordsStruct       footPos;
   intCoordsStruct  		initialFootPos;
   intCoordsStruct      	legBasePos;
-  longCoordsStruct     	footPosCalc;
-  jointAnglesStruct     jointAngles;
-  servoPosStruct        servoPos;
+  floatCoordsStruct     footPosCalc;
+  floatJointsStruct     jointAngles;
+  intJointsStruct       servoPos;
   float                 bodyRotZ;
 };
 extern legStruct        leg[6]; 
@@ -115,7 +116,7 @@ struct bodyStruct{
   int   posY;
   int   posZ;
 };
-//extern bodyStruct body;
+extern bodyStruct body;
   
 
 
@@ -125,6 +126,7 @@ void driveServos();
 void legAngleCorrections();
 void tripodGait();
 void waveGait();
+void rippleGait();
 float radians(float deg);
 float degrees(float rad);
 intCoordsStruct bodyCGOffset();
