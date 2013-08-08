@@ -1,1 +1,40 @@
-Initial release
+README
+
+This is my code that I'm writing just for fun. I barely know what I'm doing. It's probably broken in lots of ways so use at your own risk. Beware!
+
+Processor Requirements:
+Raspberry Pi
+Xbee radio connected to Raspberry Pi UART
+USB2AX connected via USB
+WiringPi library
+Dynamixel SDK library
+
+Robot Requirements:
+Trossen Robotics MkII PhantomX Hexapod chassis kit
+Robotis Dynamixel AX-12A servos
+Arbotix Commander controller
+
+Features:
+Real time IK/FK engine with tripod gait and wave gait
+
+Installation:
+Simply run 'make' to compile binary.
+
+How to use:
+Upon power up, just run 'runBETH'. Make sure the Xbee UART and USB2AX initialize properly via the terminal output.
+
+Three buttons above left joystick:
+#1 sets to Tripod Gait
+#2 sets to Wave Gait
+
+Three buttons above right joystick:
+#1 sets to body rotation demo mode (feet stay planted and body rotates about X,Y,Z using joysticks)
+#2 sets to body translation demo mode (feet stay planted and body translates X,Y,Z using joysticks)
+#3 sets to default walk mode (left joystick walks forward/backward and straffes, right joystick rotates)
+
+Shutdown:
+You don't really have to, but if you want to shutdown nice and clean, press the two top buttons at the same time. You'll see a shutdown message on the terminal, the servos will go limp, and the program will end.
+
+For more info about this and other projects check out www.projectsofdan.com
+
+
